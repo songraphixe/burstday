@@ -1,0 +1,248 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Dark mode (default) ─── */
+:root,
+[data-theme="dark"] {
+  --burst-pink: #FF375F;
+  --burst-orange: #FF6B2C;
+  --burst-gold: #FFB340;
+  --burst-gradient: linear-gradient(135deg, #FF375F 0%, #FF6B2C 50%, #FFB340 100%);
+
+  --bg-primary: #0A0A0F;
+  --bg-secondary: #13131A;
+  --bg-sidebar: #0D0D14;
+  --bg-card: rgba(255, 255, 255, 0.06);
+  --bg-card-hover: rgba(255, 255, 255, 0.09);
+  --bg-input: rgba(255, 255, 255, 0.05);
+  --bg-input-hover: rgba(255, 255, 255, 0.08);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(255, 255, 255, 0.16);
+  --border-input: rgba(255, 255, 255, 0.10);
+
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --text-muted: rgba(255, 255, 255, 0.35);
+  --text-placeholder: rgba(255, 255, 255, 0.2);
+
+  --glass-blur: blur(20px);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-glow-pink: 0 0 40px rgba(255, 55, 95, 0.3);
+  --shadow-glow-gold: 0 0 40px rgba(255, 179, 64, 0.3);
+
+  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+  --selection-bg: rgba(255, 55, 95, 0.3);
+}
+
+/* ─── Light mode ─── */
+[data-theme="light"] {
+  --bg-primary: #F5F3EE;
+  --bg-secondary: #EBE8E1;
+  --bg-sidebar: #EDE9E2;
+  --bg-card: rgba(255, 255, 255, 0.75);
+  --bg-card-hover: rgba(255, 255, 255, 0.95);
+  --bg-input: rgba(0, 0, 0, 0.04);
+  --bg-input-hover: rgba(0, 0, 0, 0.07);
+
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-active: rgba(0, 0, 0, 0.16);
+  --border-input: rgba(0, 0, 0, 0.10);
+
+  --text-primary: #1A1824;
+  --text-secondary: rgba(26, 24, 36, 0.60);
+  --text-muted: rgba(26, 24, 36, 0.38);
+  --text-placeholder: rgba(26, 24, 36, 0.25);
+
+  --glass-blur: blur(20px);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.10);
+  --shadow-glow-pink: 0 0 30px rgba(255, 55, 95, 0.18);
+  --shadow-glow-gold: 0 0 30px rgba(255, 179, 64, 0.18);
+
+  --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --selection-bg: rgba(255, 55, 95, 0.18);
+}
+
+/* ─── Base ─── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body), 'Satoshi', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 2px; }
+
+::selection { background: var(--selection-bg); }
+
+/* ─── Utility classes (theme-aware) ─── */
+.gradient-text {
+  background: var(--burst-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg, 24px);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+.glass-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-active);
+}
+
+.gradient-border {
+  position: relative;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg, 24px);
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--burst-gradient);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--burst-pink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─── Gradient context: always warm cream text + glow, both themes ─── */
+/*
+  .gradient-context marks any element that sits on a burst gradient background.
+  Text inside it stays warm cream (#FFF8EE) regardless of theme, and glows are preserved.
+*/
+.gradient-context,
+.gradient-context * {
+  color: #FFF8EE !important;
+}
+.gradient-context {
+  box-shadow: 0 4px 24px rgba(255, 55, 95, 0.35), 0 0 48px rgba(255, 107, 44, 0.18);
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+.gradient-context:hover {
+  box-shadow: 0 6px 36px rgba(255, 55, 95, 0.5), 0 0 70px rgba(255, 107, 44, 0.25);
+}
+/* Loading spinner border inside gradient buttons stays readable */
+.gradient-context .border-t-white { border-top-color: #FFF8EE !important; }
+.gradient-context .border-white\/30 { border-color: rgba(255,248,238,0.3) !important; }
+
+/* ─── Light mode: Tailwind overrides ─── */
+
+/* Structural backgrounds */
+[data-theme="light"] body,
+[data-theme="light"] .bg-\[\#0A0A0F\],
+[data-theme="light"] .bg-\[\#0D0D14\],
+[data-theme="light"] .bg-\[\#13131A\] {
+  background-color: var(--bg-primary);
+}
+[data-theme="light"] .min-h-screen {
+  background: var(--bg-primary);
+}
+
+/* Text — scoped to non-gradient contexts only */
+[data-theme="light"] .text-white:not(.gradient-context):not(.gradient-context *) {
+  color: var(--text-primary) !important;
+}
+[data-theme="light"] .text-white\/90:not(.gradient-context *) { color: rgba(26,24,36,0.90) !important; }
+[data-theme="light"] .text-white\/80:not(.gradient-context *) { color: rgba(26,24,36,0.80) !important; }
+[data-theme="light"] .text-white\/70:not(.gradient-context *) { color: rgba(26,24,36,0.70) !important; }
+[data-theme="light"] .text-white\/60:not(.gradient-context *) { color: rgba(26,24,36,0.60) !important; }
+[data-theme="light"] .text-white\/50:not(.gradient-context *) { color: rgba(26,24,36,0.50) !important; }
+[data-theme="light"] .text-white\/40:not(.gradient-context *) { color: rgba(26,24,36,0.45) !important; }
+[data-theme="light"] .text-white\/35:not(.gradient-context *) { color: rgba(26,24,36,0.38) !important; }
+[data-theme="light"] .text-white\/30:not(.gradient-context *) { color: rgba(26,24,36,0.35) !important; }
+[data-theme="light"] .text-white\/25:not(.gradient-context *) { color: rgba(26,24,36,0.28) !important; }
+[data-theme="light"] .text-white\/20:not(.gradient-context *) { color: rgba(26,24,36,0.22) !important; }
+
+/* Glass inputs / form fields */
+[data-theme="light"] .bg-white\/5,
+[data-theme="light"] .bg-white\/3 {
+  background: var(--bg-input) !important;
+}
+[data-theme="light"] .bg-white\/10 { background: rgba(0,0,0,0.07) !important; }
+[data-theme="light"] .bg-white\/20 { background: rgba(0,0,0,0.10) !important; }
+
+/* Borders */
+[data-theme="light"] .border-white\/5  { border-color: rgba(0,0,0,0.06) !important; }
+[data-theme="light"] .border-white\/8  { border-color: rgba(0,0,0,0.08) !important; }
+[data-theme="light"] .border-white\/10 { border-color: rgba(0,0,0,0.09) !important; }
+[data-theme="light"] .border-white\/15 { border-color: rgba(0,0,0,0.11) !important; }
+[data-theme="light"] .border-white\/16 { border-color: rgba(0,0,0,0.13) !important; }
+[data-theme="light"] .border-white\/20 { border-color: rgba(0,0,0,0.13) !important; }
+
+/* Sidebar & BottomNav */
+[data-theme="light"] aside {
+  background: var(--bg-sidebar) !important;
+  border-color: rgba(0,0,0,0.07) !important;
+}
+[data-theme="light"] nav.fixed {
+  background: rgba(237,233,226,0.95) !important;
+  border-color: rgba(0,0,0,0.07) !important;
+}
+
+/* Modal backdrop */
+[data-theme="light"] .backdrop-blur-sm {
+  background: rgba(200,196,188,0.5) !important;
+}
+
+/* Inputs / textareas */
+[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+  color: var(--text-primary) !important;
+}
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: var(--text-placeholder) !important;
+}
+[data-theme="light"] input[type="date"],
+[data-theme="light"] input[type="time"],
+[data-theme="light"] select {
+  color-scheme: light !important;
+}
+
+/* Hover bg for ghost elements */
+[data-theme="light"] .hover\:bg-white\/5:hover  { background: rgba(0,0,0,0.05) !important; }
+[data-theme="light"] .hover\:bg-white\/10:hover { background: rgba(0,0,0,0.07) !important; }
+
+/* ─── Animations ─── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+.shake { animation: shake 0.4s ease-in-out; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up { animation: fadeInUp 0.4s ease forwards; }
+
+.neon-glow {
+  text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 40px currentColor;
+}
