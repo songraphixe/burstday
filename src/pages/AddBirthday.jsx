@@ -105,6 +105,21 @@ export default function AddBirthday() {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
+      // Ensure the user's profile row exists (handles users who signed up
+      // before email confirmation was disabled — they have no profile row)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert(
+          { id: user.id, full_name: user.user_metadata?.full_name || '' },
+          { onConflict: 'id', ignoreDuplicates: true }
+        );
+
+      if (profileError) {
+        toast(`Profile error: ${profileError.message}`, 'error');
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         ...data,
         user_id: user.id,
@@ -121,7 +136,7 @@ export default function AddBirthday() {
         navigate('/dashboard');
       }
     } catch (err) {
-      toast('Something went wrong. Please try again.', 'error');
+      toast(err?.message || 'Something went wrong. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
