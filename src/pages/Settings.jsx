@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LogOut, Trash2, Save, Sun, Moon } from 'lucide-react';
+import { LogOut, Trash2, Save, Sun, Moon, Camera } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
@@ -24,9 +24,34 @@ export default function Settings() {
   const [timezone, setTimezone] = useState(profile?.timezone || 'Africa/Accra');
   const [reminderDays, setReminderDays] = useState(profile?.reminder_advance_days || 1);
   const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ current: '', newPass: '', confirm: '' });
   const [pwLoading, setPwLoading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast('Image must be under 5MB', 'error'); return; }
+    setAvatarUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path);
+      await updateProfile({ avatar_url: publicUrl });
+      toast('Profile picture updated!', 'success');
+    } catch (err) {
+      toast(err?.message || 'Upload failed. Try again.', 'error');
+    } finally {
+      setAvatarUploading(false);
+      e.target.value = '';
+    }
+  };
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -71,10 +96,37 @@ export default function Settings() {
       <section className="glass-card p-6 mb-4">
         <h2 className="text-lg font-semibold mb-4">Profile</h2>
         <div className="flex items-center gap-4 mb-5">
-          <Avatar name={profile?.full_name || user?.email} src={profile?.avatar_url} size="lg" />
+          {/* Clickable avatar with camera overlay */}
+          <div className="relative flex-shrink-0">
+            <Avatar name={profile?.full_name || user?.email} src={profile?.avatar_url} size="lg" />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={avatarUploading}
+              className="absolute inset-0 rounded-full flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity duration-200 cursor-pointer"
+              title="Change profile picture"
+            >
+              {avatarUploading
+                ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                : <Camera size={20} className="text-white" />}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarUpload}
+            />
+          </div>
           <div>
             <p className="font-medium">{profile?.full_name || 'User'}</p>
             <p className="text-white/40 text-sm">{user?.email}</p>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={avatarUploading}
+              className="text-[#FF375F] text-xs mt-1 hover:text-[#FF6B2C] transition-colors disabled:opacity-50"
+            >
+              {avatarUploading ? 'Uploading...' : 'Change photo'}
+            </button>
           </div>
         </div>
         <div className="space-y-4">
