@@ -51,7 +51,7 @@ serve(async (req) => {
     },
     body: JSON.stringify({
       from: "Burstday <reminders@burstday.app>",
-      to: [birthday.profiles?.email || ""],
+      to: [birthday.userEmail || ""],
       subject,
       html,
     }),

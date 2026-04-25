@@ -11,35 +11,71 @@ serve(async () => {
   const todayMonth = today.getMonth() + 1;
   const todayDay = today.getDate();
 
-  const { data: birthdays } = await supabase
+  // Fetch birthdays with profile data
+  const { data: birthdays, error } = await supabase
     .from("birthdays")
-    .select(`*, profiles(full_name, telegram_chat_id, whatsapp_number, timezone)`);
+    .select(`*, profiles(full_name, telegram_chat_id, whatsapp_number, timezone)`)
+    .eq("is_active", true);
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
+
+  // Fetch user emails from auth.users via admin API
+  const { data: { users } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  const emailMap: Record<string, string> = {};
+  for (const u of users) emailMap[u.id] = u.email ?? "";
+
+  const results = [];
 
   for (const birthday of birthdays || []) {
-    const birthMonth = new Date(birthday.birth_date).getMonth() + 1;
-    const birthDay = new Date(birthday.birth_date).getDate();
-    const advanceDays = birthday.reminder_advance_days || 1;
+    const birthDate = new Date(birthday.birth_date + "T00:00:00");
+    const birthMonth = birthDate.getMonth() + 1;
+    const birthDay = birthDate.getDate();
+    const advanceDays = birthday.reminder_advance_days ?? 1;
 
+    // Check if today matches the reminder trigger date
     const targetDate = new Date(today);
     targetDate.setDate(today.getDate() + advanceDays);
-    const isUpcoming = targetDate.getMonth() + 1 === birthMonth && targetDate.getDate() === birthDay;
+    const isUpcoming =
+      targetDate.getMonth() + 1 === birthMonth &&
+      targetDate.getDate() === birthDay;
     const isToday = todayMonth === birthMonth && todayDay === birthDay;
 
-    if (isToday || isUpcoming) {
-      const channels = birthday.reminder_channels || ["email"];
+    if (!isToday && !isUpcoming) continue;
 
-      if (channels.includes("email")) {
-        await supabase.functions.invoke("send-email", { body: { birthday, isToday } });
-      }
+    const channels: string[] = birthday.reminder_channels || ["email"];
+    const userEmail = emailMap[birthday.user_id] || "";
+    const enrichedBirthday = { ...birthday, userEmail };
 
-      if (channels.includes("telegram") && birthday.profiles?.telegram_chat_id) {
-        await supabase.functions.invoke("telegram-notify", { body: { birthday, isToday } });
-      }
+    const dispatched: string[] = [];
 
+    if (channels.includes("email") && userEmail) {
+      await supabase.functions.invoke("send-email", {
+        body: { birthday: enrichedBirthday, isToday },
+      });
+      dispatched.push("email");
+    }
+
+    if (channels.includes("telegram") && birthday.profiles?.telegram_chat_id) {
+      await supabase.functions.invoke("telegram-notify", {
+        body: { birthday, isToday },
+      });
+      dispatched.push("telegram");
+    }
+
+    if (channels.includes("whatsapp") && birthday.profiles?.whatsapp_number) {
+      await supabase.functions.invoke("send-whatsapp", {
+        body: { birthday, isToday },
+      });
+      dispatched.push("whatsapp");
+    }
+
+    if (dispatched.length > 0) {
       await supabase.from("reminder_logs").insert({
         birthday_id: birthday.id,
         user_id: birthday.user_id,
-        channel: channels.join(","),
+        channel: dispatched.join(","),
         status: "sent",
       });
 
@@ -48,9 +84,11 @@ serve(async () => {
         .update({ last_reminded_at: new Date().toISOString() })
         .eq("id", birthday.id);
     }
+
+    results.push({ name: birthday.name, channels: dispatched, isToday });
   }
 
-  return new Response(JSON.stringify({ success: true }), {
+  return new Response(JSON.stringify({ success: true, processed: results }), {
     headers: { "Content-Type": "application/json" },
   });
 });
